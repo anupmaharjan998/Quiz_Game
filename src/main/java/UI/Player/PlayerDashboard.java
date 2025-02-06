@@ -8,17 +8,18 @@ import Model.LevelModel;
 import Model.ScoreModel;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 
 public class PlayerDashboard extends JFrame {
     private final ScoreDAO scoreDAO;
     private final LevelDAO levelDAO;
     private JPanel panel;
-    private JTextArea scoreBoard;
+    private JTextPane scoreBoard;
     private List<LevelModel> levels;
     private JButton btnBeginner, btnIntermediate, btnAdvanced;
     private String user_id;
@@ -30,72 +31,92 @@ public class PlayerDashboard extends JFrame {
 
         // Set up the frame
         setTitle("Quiz Game Dashboard");
-        setSize(500, 600);
+        setSize(600, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Center the window
 
-        // Create the panel and layout
+        // Create main panel
         panel = new JPanel();
         panel.setLayout(new GridBagLayout());
-        panel.setBackground(new Color(240, 240, 240)); // Light gray background
+        panel.setBackground(new Color(230, 240, 255)); // Light blue background
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10); // Padding around components
+        gbc.insets = new Insets(10, 10, 10, 10); // Padding
 
         // Add title label
         JLabel titleLabel = new JLabel("Quiz Game Dashboard", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 26));
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 3;
         panel.add(titleLabel, gbc);
 
-        // Add label
-        JLabel selectLabel = new JLabel("Select Level", JLabel.CENTER);
+        // Add level selection label
+        JLabel selectLabel = new JLabel("Select Level");
         selectLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        gbc.gridy = 1; // Move to the next row
+        gbc.gridy = 1;
         panel.add(selectLabel, gbc);
 
         levels = levelDAO.getAllLevels();
 
-        // Add buttons for each level
-        btnBeginner = new JButton("Beginner");
-        btnIntermediate = new JButton("Intermediate");
-        btnAdvanced = new JButton("Advanced");
+        // Create level buttons in a single row (centered)
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        btnBeginner = createStyledButton("Beginner");
+        btnIntermediate = createStyledButton("Intermediate");
+        btnAdvanced = createStyledButton("Advanced");
 
-        gbc.gridy = 2; // Move to the next row
-        panel.add(btnBeginner, gbc);
-        gbc.gridy++;
-        panel.add(btnIntermediate, gbc);
-        gbc.gridy++;
-        panel.add(btnAdvanced, gbc);
+        buttonPanel.add(btnBeginner);
+        buttonPanel.add(btnIntermediate);
+        buttonPanel.add(btnAdvanced);
 
-        // Add action listeners to buttons
+        gbc.gridy = 2;
+        panel.add(buttonPanel, gbc);
+
+        // Add action listeners
         addListener(btnBeginner, "Beginner");
         addListener(btnIntermediate, "Intermediate");
         addListener(btnAdvanced, "Advanced");
 
-        // Add scoreboard text area
-        scoreBoard = new JTextArea(10, 30);
+        // Scoreboard Panel with 3-column layout
+        scoreBoard = new JTextPane();
+        scoreBoard.setContentType("text/html");
         scoreBoard.setEditable(false);
-        scoreBoard.setText("Top 3 Scores for each Category:\n\n");
+        scoreBoard.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(), "Top Scores", TitledBorder.CENTER, TitledBorder.TOP));
+
         showScores();
-        gbc.gridy++;
-        panel.add(new JScrollPane(scoreBoard), gbc);
+
+        JScrollPane scrollPane = new JScrollPane(scoreBoard);
+        scrollPane.setPreferredSize(new Dimension(500, 250));
+
+        gbc.gridy = 3;
+        gbc.gridwidth = 3;
+        panel.add(scrollPane, gbc);
 
         // Add panel to frame
         add(panel);
         setVisible(true);
     }
 
-    // Method to add listener for the buttons
+    // Helper method to create styled buttons
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setPreferredSize(new Dimension(150, 40));
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        return button;
+    }
+
+    // Add listener for level buttons
     private void addListener(JButton btn, String levelName) {
         btn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String levelId = getLevelIdByName(levelName); // Get the level ID when button is clicked
+                String levelId = getLevelIdByName(levelName);
                 startQuiz(levelId);
             }
         });
     }
 
-    // Method to start the quiz for the selected category
+    // Start quiz for selected level
     private void startQuiz(String level_id) {
         LevelModel level = getLevelById(level_id);
         new QuizPage(level, user_id);
@@ -105,10 +126,10 @@ public class PlayerDashboard extends JFrame {
     private LevelModel getLevelById(String levelId) {
         for (LevelModel level : levels) {
             if (Objects.equals(level.getLevelId(), levelId)) {
-                return level; // Return the found level
+                return level;
             }
         }
-        return null; // Return null if not found
+        return null;
     }
 
     private String getLevelIdByName(String levelName) {
@@ -117,70 +138,58 @@ public class PlayerDashboard extends JFrame {
                 return level.getLevelId();
             }
         }
-        return null; // Return null if not found
+        return null;
     }
 
-    // Method to display scores for the selected category
+    // Display formatted scores in 3 columns
     private void showScores() {
-        StringBuilder scores = new StringBuilder();
-        scores.append("Scores:\n\n");
-        ScoreModel beginnerScores = null;
-        ScoreModel intermediateScores = null;
-        ScoreModel advancedScores = null;
+        StringBuilder scores = new StringBuilder("<html><body style='font-size:14px;'>");
 
-        List<ScoreModel> scoreList = scoreDAO.getScoreByUserID(user_id);
+        Map<String, List<String>> levelScores = new HashMap<>();
+        levelScores.put("Beginner", new ArrayList<>());
+        levelScores.put("Intermediate", new ArrayList<>());
+        levelScores.put("Advanced", new ArrayList<>());
 
-        for (ScoreModel scoreModel : scoreList){
-            switch (scoreModel.getLevelName()){
-                case "Beginner":
-                    beginnerScores = scoreModel;
-                    break;
-                case "Intermediate":
-                    intermediateScores = scoreModel;
-                    break;
-                case "Advanced":
-                    advancedScores = scoreModel;
-                    break;
-            }
+        for (ScoreModel scoreModel : scoreDAO.getScoreByUserID(user_id)) {
+            List<String> scoresList = Arrays.asList(arrayScore(scoreModel.getScores()));
+
+            // Convert to an ArrayList to allow sorting
+            List<String> sortedScores = new ArrayList<>(scoresList);
+
+            // Sort scores in ascending order
+            sortedScores.sort(Comparator.reverseOrder());
+
+            // Store in the map
+            levelScores.put(scoreModel.getLevelName(), sortedScores);
         }
 
+        // HTML Table for 3-column layout
+        scores.append("<table border='1' cellpadding='5' cellspacing='0' style='width:100%; text-align:center;'>");
+        scores.append("<tr style='background-color:#ADD8E6; font-weight:bold;'><td>Beginner</td><td>Intermediate</td><td>Advanced</td></tr>");
 
 
-        // Display scores for Beginner
-        scores.append("Beginner:\n");
-        if (beginnerScores != null) {
-            for (String score : arrayScore(beginnerScores.getScores())){
-                scores.append(score).append("\n");
-            }
+        for (int i = 0; i < 5; i++) {
+            scores.append("<tr>");
+            scores.append("<td>").append(getScoreAt(levelScores.get("Beginner"), i)).append("</td>");
+            scores.append("<td>").append(getScoreAt(levelScores.get("Intermediate"), i)).append("</td>");
+            scores.append("<td>").append(getScoreAt(levelScores.get("Advanced"), i)).append("</td>");
+            scores.append("</tr>");
         }
 
-        // Display scores for Intermediate
-        scores.append("\nIntermediate:\n");
-        if (intermediateScores != null) {
-            for (String score : arrayScore(intermediateScores.getScores())) {
-                scores.append(score).append("\n");
-            }
-        }
-
-
-        // Display scores for Advanced
-        scores.append("\nAdvanced:\n");
-        if (advancedScores != null) {
-            for (String score : arrayScore(advancedScores.getScores())) {
-                scores.append(score).append("\n");
-            }
-        }
-
-
+        scores.append("</table></body></html>");
         scoreBoard.setText(scores.toString());
     }
 
-    private String[] arrayScore(String score){
+    // Helper method to get score at index or return empty space
+    private String getScoreAt(List<String> scores, int index) {
+        return (index < scores.size()) ? scores.get(index) : "";
+    }
+
+    private String[] arrayScore(String score) {
         return score.split(",");
     }
 
     public static void main(String[] args) {
-        // Run the application
         SwingUtilities.invokeLater(() -> new PlayerDashboard("anupmaha"));
     }
 }

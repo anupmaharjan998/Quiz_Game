@@ -48,10 +48,36 @@ public class QuizPage extends JFrame {
     }
 
     // Method to display the current question
+    // Method to display the current question or handle empty question list
     private void displayQuestion(int index) {
         panel.removeAll(); // Clear previous question
 
-        if (index < questions.size()) {
+        if (questions == null || questions.isEmpty()) {
+            // Display "Questions Not Available" message
+            JLabel noQuestionLabel = new JLabel("Questions Not Available");
+            noQuestionLabel.setFont(new Font("Arial", Font.BOLD, 20));
+            noQuestionLabel.setForeground(Color.RED);
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            panel.add(noQuestionLabel, gbc);
+
+            // Add "Go to Dashboard" button
+            JButton dashboardButton = new JButton("Go to Dashboard");
+            dashboardButton.setFont(new Font("Arial", Font.BOLD, 16));
+            dashboardButton.setBackground(new Color(100, 150, 255)); // Blue color
+            dashboardButton.setForeground(Color.WHITE);
+            dashboardButton.setFocusPainted(false);
+            dashboardButton.addActionListener(e -> {
+                new PlayerDashboard(user_id); // Navigate to PlayerDashboard
+                dispose(); // Close the current window
+            });
+
+            gbc.gridy = 1;
+            panel.add(dashboardButton, gbc);
+
+        } else if (index < questions.size()) {
+            // Proceed with displaying questions if available
             Question question = questions.get(index);
             JLabel questionLabel = new JLabel("Q: " + question.getQuestion());
             questionLabel.setFont(new Font("Arial", Font.BOLD, 18));
@@ -62,58 +88,53 @@ public class QuizPage extends JFrame {
             gbc.anchor = GridBagConstraints.WEST;
             panel.add(questionLabel, gbc);
 
-            String[] optionsArray = question.getOptions().split(","); // Split CSV into individual options
+            String[] optionsArray = question.getOptions().split(",");
 
             ButtonGroup group = new ButtonGroup();
-            gbc.gridy = 1; // Start adding options below the question
+            gbc.gridy = 1;
             for (String option : optionsArray) {
-                JRadioButton radioButton = new JRadioButton(option.trim()); // Create radio button for each option
+                JRadioButton radioButton = new JRadioButton(option.trim());
                 radioButton.setFont(new Font("Arial", Font.PLAIN, 16));
-                radioButton.setBackground(new Color(240, 240, 240)); // Match background color
+                radioButton.setBackground(new Color(240, 240, 240));
                 group.add(radioButton);
                 panel.add(radioButton, gbc);
-                gbc.gridy++; // Move to the next row for the next option
+                gbc.gridy++;
             }
 
-            // Add a submit button
+            // Submit button
             JButton submitButton = new JButton("Submit");
             submitButton.setFont(new Font("Arial", Font.BOLD, 16));
-            submitButton.setBackground(new Color(100, 150, 255)); // Blue background
-            submitButton.setForeground(Color.WHITE); // White text
-            submitButton.setFocusPainted(false); // Remove focus border
-            submitButton.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // Check the selected option
-                    boolean isCorrect = false; // Flag to check if the answer is correct
-                    Enumeration<AbstractButton> buttons = group.getElements();
-                    while (buttons.hasMoreElements()) {
-                        AbstractButton button = buttons.nextElement();
-                        if (button.isSelected()) {
-                            if (button.getText().equals(question.getCorrect())) {
-                                correctAnswersCount++; // Increment correct answers count
-                                isCorrect = true; // Set flag to true if the answer is correct
-                            }
-                            break; // Exit the loop once the selected button is found
+            submitButton.setBackground(new Color(100, 150, 255));
+            submitButton.setForeground(Color.WHITE);
+            submitButton.setFocusPainted(false);
+            submitButton.addActionListener(e -> {
+                boolean isCorrect = false;
+                Enumeration<AbstractButton> buttons = group.getElements();
+                while (buttons.hasMoreElements()) {
+                    AbstractButton button = buttons.nextElement();
+                    if (button.isSelected()) {
+                        if (button.getText().equals(question.getCorrect())) {
+                            correctAnswersCount++;
+                            isCorrect = true;
                         }
-                    }
-                    // Move to the next question
-                    currentQuestionIndex++;
-                    if (currentQuestionIndex < questions.size()) {
-                        displayQuestion(currentQuestionIndex);
-                    } else {
-                        showResults(); // Show results when all questions are answered
+                        break;
                     }
                 }
+
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.size()) {
+                    displayQuestion(currentQuestionIndex);
+                } else {
+                    showResults();
+                }
             });
-            gbc.gridy++; // Move to the next row for the submit button
+
+            gbc.gridy++;
             panel.add(submitButton, gbc);
-        } else {
-            showResults(); // Show results if no more questions
         }
 
-        panel.revalidate(); // Refresh the panel
-        panel.repaint(); // Repaint the panel
+        panel.revalidate();
+        panel.repaint();
     }
 
     private List<Question> getQuestions() {
@@ -129,7 +150,10 @@ public class QuizPage extends JFrame {
         int option = JOptionPane.showConfirmDialog(this, message, "Quiz Results", JOptionPane.OK_CANCEL_OPTION);
 
         if (option == JOptionPane.OK_OPTION) {
-            storeScoreInDatabase(); // Store the score in the database
+            if (correctAnswersCount > 0)
+                storeScoreInDatabase(); // Store the score in the database
+            new PlayerDashboard(user_id);
+            dispose();
         }
 
         panel.revalidate(); // Refresh the panel
@@ -149,6 +173,5 @@ public class QuizPage extends JFrame {
             ScoreModel model = new ScoreModel(user_id, level.getLevelId(),String.valueOf(correctAnswersCount));
             scoreDAO.addScore(model);
         }
-        new PlayerDashboard(user_id);
     }
 }
