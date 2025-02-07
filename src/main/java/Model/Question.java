@@ -8,6 +8,7 @@ public class Question {
     private String options; // Can be stored as a JSON string
     private String correct;
     private String levelId;
+    private String levelName;
 
     public Question(String question, String options, String correct, String levelId) {
         this.quesId = UUID.randomUUID().toString(); // Generate a unique ID
@@ -55,5 +56,13 @@ public class Question {
 
     public void setLevelId(String levelId) {
         this.levelId = levelId;
+    }
+
+    public void setLevelName(String levelName) {
+        this.levelName = levelName;
+    }
+
+    public String getLevelName() {
+        return levelName;
     }
 }

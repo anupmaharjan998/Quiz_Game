@@ -22,4 +22,9 @@ public class LevelModel {
         this.level_name = levelName;
     }
 
+    @Override
+    public String toString() {
+        return level_name;
+    }
+
 }

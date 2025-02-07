@@ -109,6 +109,8 @@ public class DBConnection {
                         "user_id CHAR(36) NOT NULL, " +
                         "level_id CHAR(36) NOT NULL, " +
                         "score VARCHAR(255) NOT NULL, " +
+                        "avg_score FLOAT NOT NULL, " +
+                        "total_quizzes INT NOT NULL, " +
                         "FOREIGN KEY (user_id) REFERENCES Users(user_id), " +
                         "FOREIGN KEY (level_id) REFERENCES Levels(level_id))");
     }

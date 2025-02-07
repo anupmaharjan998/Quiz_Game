@@ -15,7 +15,7 @@ public class QuestionDAOImp implements QuestionDAO {
 
 
         try (Connection conn = DBConnection.getConnection()){
-            String query = "SELECT * FROM Questions";
+            String query = "SELECT q.*, s.level_name FROM Questions q JOIN Levels s ON q.level_id = s.level_id";
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);
 
@@ -27,12 +27,42 @@ public class QuestionDAOImp implements QuestionDAO {
                         rs.getString("level_id")
                 );
                 question.setQuesId(rs.getString("ques_id"));
+                question.setLevelName(rs.getString("level_name"));
                 questions.add(question);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return questions;
+    }
+
+    @Override
+    public Question getQuestionsById(String id) {
+        String query = "SELECT q.*, s.level_name FROM Questions q JOIN Levels s ON q.level_id = s.level_id WHERE q.ques_id = ?";
+        Question question = null;
+
+        try (Connection conn = DBConnection.getConnection()){
+            PreparedStatement stmt = conn.prepareStatement(query);
+
+            stmt.setString(1, id);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                question = new Question(
+                        rs.getString("question"),
+                        rs.getString("options"),
+                        rs.getString("correct"),
+                        rs.getString("level_id")
+                );
+                question.setQuesId(rs.getString("ques_id"));
+                question.setLevelName(rs.getString("level_name"));
+                return question;
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return question;
     }
 
     @Override
