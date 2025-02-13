@@ -3,6 +3,7 @@ package np.edu.herald.quizzapp.ui.player;
 import np.edu.herald.quizzapp.dao.QuestionDAO;
 import np.edu.herald.quizzapp.dao.LevelDAO;
 import np.edu.herald.quizzapp.dao.ScoreDAO;
+import np.edu.herald.quizzapp.main.Main;
 import np.edu.herald.quizzapp.model.Levels;
 import np.edu.herald.quizzapp.model.Scores;
 
@@ -89,9 +90,32 @@ public class PlayerDashboard extends JFrame {
         gbc.gridwidth = 3;
         panel.add(scrollPane, gbc);
 
+        // Add a logout button
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 16));
+        logoutButton.setPreferredSize(new Dimension(150, 40));
+        logoutButton.setBackground(new Color(255, 99, 71)); // Red color for logout
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.addActionListener(e -> logout());
+
+        gbc.gridy = 4; // Position below scoreboard
+        panel.add(logoutButton, gbc);
+
         // Add panel to frame
         add(panel);
         setVisible(true);
+    }
+
+    // Logout method
+    private void logout() {
+        int response = JOptionPane.showConfirmDialog(this, "Are you sure you want to logout?",
+                "Logout", JOptionPane.YES_NO_OPTION);
+
+        if (response == JOptionPane.YES_OPTION) {
+            Main.main(new String[]{}); // Call main method of your MainApp class
+            dispose(); // Close the current PlayerDashboard window
+        }
     }
 
     // Helper method to create styled buttons

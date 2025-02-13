@@ -80,14 +80,24 @@ public class QuizPage extends JFrame {
         } else if (index < questions.size()) {
             // Proceed with displaying questions if available
             Questions question = questions.get(index);
-            JLabel questionLabel = new JLabel("Q: " + question.getQuestion());
-            questionLabel.setFont(new Font("Arial", Font.BOLD, 18));
-            questionLabel.setForeground(new Color(50, 50, 50)); // Dark gray text
+
+            // Use JTextArea for the question so it wraps long text
+            JTextArea questionArea = new JTextArea("Q: " + question.getQuestion());
+            questionArea.setFont(new Font("Arial", Font.BOLD, 18));
+            questionArea.setForeground(new Color(50, 50, 50)); // Dark gray text
+            questionArea.setWrapStyleWord(true);
+            questionArea.setLineWrap(true);
+            questionArea.setOpaque(false);
+            questionArea.setEditable(false);
+            questionArea.setFocusable(false);
+
+            JScrollPane questionScrollPane = new JScrollPane(questionArea);
+            questionScrollPane.setPreferredSize(new Dimension(400, 100)); // Set appropriate size for wrapping
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.gridx = 0;
             gbc.gridy = 0;
             gbc.anchor = GridBagConstraints.WEST;
-            panel.add(questionLabel, gbc);
+            panel.add(questionScrollPane, gbc);
 
             String[] optionsArray = question.getOptions().split(",");
 
@@ -135,6 +145,7 @@ public class QuizPage extends JFrame {
         panel.revalidate();
         panel.repaint();
     }
+
 
     private List<Questions> getQuestions() {
         return questionDAO.getQuestionsByDifficulty(level.getLevelId());

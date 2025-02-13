@@ -7,9 +7,14 @@ import np.edu.herald.quizzapp.ui.LoginPage;
 import static np.edu.herald.quizzapp.connection.DBConnection.initializeDatabase;
 
 public class Main {
-    public static void main(String[] args) {
+    static boolean isFirstRun = true;
 
-        initializeDatabase();
+    public static void main(String[] args) {
+        if (isFirstRun) {
+            initializeDatabase();
+            isFirstRun = false;
+        }
+
         AuthServiceDAO authService = new AuthServiceDAOImp();
         LevelDAO  levelDAO = new LevelDAOImp();
         QuestionDAO questionDAO = new QuestionDAOImp();
